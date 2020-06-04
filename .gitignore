@@ -1,0 +1,16 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.o
+
+# Compiled Static libraries
+*.a
+
+*.map
+
+# Executables
+*.elf
+*.bin
+*.s19
+*.hex
