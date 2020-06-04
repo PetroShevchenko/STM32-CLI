@@ -1,20 +1,22 @@
 ## STM32 Command line Interface
 
+### Introduction
 This repository contains makefiles to build BSP example for STM32H747I-DISCO board.
 You should clone STM32CubeH7 repository by the link https://github.com/STMicroelectronics/STM32CubeH7.git to your home directory.
 
-$ cd ~/
+**$ cd ~/**
 
-$ git clone https://github.com/STMicroelectronics/STM32CubeH7.git
+**$ git clone https://github.com/STMicroelectronics/STM32CubeH7.git**
 
 To build the example use following commands:
 
-$ cd ~/STM32-CLI
-$ make all
+**$ cd ~/STM32-CLI**
+
+**$ make all**
 
 To clean binary files use the command:
 
-$ make clean
+**$ make clean**
 
 ### Toolchain
 This project uses ARM GNU Toolchain which can be downloaded by the link https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
