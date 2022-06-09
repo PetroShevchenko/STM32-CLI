@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (C) 2020 Petro Shevchenko <shevchenko.p.i@gmail.com>
+# Copyright (C) 2022 Petro Shevchenko <shevchenko.p.i@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,23 +15,55 @@
 # limitations under the License.
 #
 ############################################################################
-.PHONY:	all clean
+.PHONY:	all clean clean-libs
 
-include CM7/config.make
-include build/scripts/$(MCU_SERIES)/boards/$(BOARD_NAME).make
+include MP1_CM4/config.make
 
-LIB_NAME 				:= bsp
+LIB						+= open-amp
+LIB						+= bsp
+LIB						+= hal
+
+LIB_PATH 				+= build/MP1_CM4
+
+LD_SCRIPT_PATH 			:= $(PROJECT_PATH)/STM32CubeIDE/CM4
+LD_SCRIPT 				:= STM32MP157CAAX_RAM.ld
+
+INCLUDE_PATH 			+= $(PROJECT_PATH)/Inc
+VPATH 					+= $(PROJECT_PATH)/Src
+VPATH 					+= $(PROJECT_PATH)/STM32CubeIDE/CM4/Application/Startup
+VPATH 					+= $(PROJECT_PATH)/STM32CubeIDE/CM4/Application/User
 
 CMSIS_PATH				:= $(CUBE_PATH)/Drivers/CMSIS
 INCLUDE_PATH			+= $(CMSIS_PATH)/Include
 INCLUDE_PATH			+= $(CMSIS_PATH)/Device/ST/$(MCU_SERIES)/Include
 
-HAL_PATH 				:= $(CUBE_PATH)/Drivers/STM32H7xx_HAL_Driver
+HAL_PATH 				:= $(CUBE_PATH)/Drivers/STM32MP1xx_HAL_Driver
 INCLUDE_PATH			+= $(HAL_PATH)/Inc
 
-INCLUDE_PATH 			+= $(PROJECT_PATH)/CM7/Inc
+BSP_PATH				:= $(CUBE_PATH)/Drivers/BSP
+INCLUDE_PATH			+= $(BSP_PATH)/$(BOARD_NAME)
 
-SRC 					:= $(SRC_BSP)
+OPEN_AMP_PATH			:= $(CUBE_PATH)/Middlewares/Third_Party/OpenAMP
+
+INCLUDE_PATH			+= $(OPEN_AMP_PATH)/virtual_driver
+INCLUDE_PATH			+= $(OPEN_AMP_PATH)/open-amp/lib/include
+INCLUDE_PATH			+= $(OPEN_AMP_PATH)/open-amp/lib/rpmsg
+INCLUDE_PATH			+= $(OPEN_AMP_PATH)/libmetal/lib/include
+
+SRC 					:= startup_stm32mp157caax.s
+SRC 					+= syscalls.c
+SRC 					+= sysmem.c
+SRC 					+= system_stm32mp1xx.c
+SRC 					+= stm32mp1xx_it.c
+SRC 					+= stm32mp1xx_hal_msp.c
+SRC 					+= rsc_table.c
+SRC 					+= openamp_log.c
+SRC 					+= openamp.c
+SRC 					+= mbox_ipcc.c
+SRC 					+= main.c
+SRC 					+= lock_resource.c
+
+LIB						+= stdc++
 
 OPTIMIZE_LEVEL			:= 2
 DEBUG_LEVEL				:= gdb
@@ -39,10 +71,14 @@ DEBUG_LEVEL				:= gdb
 DEFINE					:= USE_HAL_DRIVER
 DEFINE					+= $(MCU_DEVICE)
 DEFINE					+= $(MCU_CORE)
-DEFINE 					+= $(BOARD_NAME)
+DEFINE 					+= METAL_MAX_DEVICE_REGIONS=2
+DEFINE 					+= __LOG_TRACE_IO_
+DEFINE 					+= NO_ATOMIC_64_SUPPORT
+DEFINE 					+= METAL_INTERNAL
+DEFINE 					+= VIRTIO_SLAVE_ONLY
 
-CCFLAGS 				:= -mcpu=cortex-m7
-CCFLAGS 				+= -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb
+CCFLAGS 				:= -mcpu=cortex-m4
+CCFLAGS 				+= -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb
 CCFLAGS 				+= -specs=nano.specs
 
 CROSS_PREFIX			:= arm-none-eabi-
@@ -59,11 +95,11 @@ SIZE					:= $(CROSS_PREFIX)size
 OBJCOPY					:= $(CROSS_PREFIX)objcopy
 OBJDUMP					:= $(CROSS_PREFIX)objdump
 
+
 INCLUDE_PATH			+= $(TOOL_PATH)/include
 LIB_PATH				+= $(TOOL_PATH)/lib
 
 LIBFLAGS				+= $(addprefix -L,$(LIB_PATH)) $(addprefix -l,$(LIB))
-ARFLAGS					:= rcs
 
 CCFLAGS					+= -Wall
 CCFLAGS					+= $(addprefix -D,$(DEFINE)) $(addprefix -I,$(INCLUDE_PATH))
@@ -88,7 +124,13 @@ CPPCFLAGS				+= $(CCFLAGS)
 CPPCFLAGS				+= -Weffc++ -Wextra -Wpedantic -Wshadow -Wundef -Wno-missing-field-initializers
 CPPCFLAGS				+= -std=c++11
 
-OBJ_PATH				:= build/CM7/obj
+BIN_PATH 				:= build/MP1_CM4
+OBJ_PATH				:= $(BIN_PATH)/obj
+IMAGE					:= $(BIN_PATH)/$(PROJECT_NAME)
+
+LDFLAGS					:= -T$(LD_SCRIPT_PATH)/$(LD_SCRIPT)
+LDFLAGS					+= -Wl,-Map,$(IMAGE).map,--cref -Wl,--gc-sections
+LDFLAGS 				+= -Wl,--start-group -lc -lm -Wl,--end-group
 
 OBJECTS					:= $(addprefix $(OBJ_PATH)/,$(patsubst %.c, %.o,$(filter %.c,$(SRC))))
 OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.cpp, %.o,$(filter %.cpp,$(SRC))))
@@ -96,27 +138,51 @@ OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.cc, %.o,$(filter %.cc,$(SRC
 OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.s, %.o,$(filter %.s,$(SRC))))
 OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.S, %.o,$(filter %.S,$(SRC))))
 
-IMAGE 					:= $(OBJ_PATH)/$(LIB_NAME)
-LIBRARY 				:= build/CM7/lib$(LIB_NAME).a
 
-all: lib
+all: bsp hal open-amp elf bin hex s19 size
 
-lib: $(LIBRARY)
-	$(RANLIB) $(LIBRARY)
+bsp:
+	make -f build/scripts/$(MCU_SERIES)/bsp.make all -j$(shell nproc || echo 2)
+
+hal:
+	make -f build/scripts/$(MCU_SERIES)/hal.make all -j$(shell nproc || echo 2)
+
+open-amp:
+	make -f build/scripts/$(MCU_SERIES)/open-amp.make all -j$(shell nproc || echo 2)
+
+elf:$(IMAGE).elf
 
 lst:$(IMAGE).lst
 
-$(IMAGE).lst: $(LIBRARY)
-	@echo $@
-	$(OBJDUMP) -D $< > $@
+bin:$(IMAGE).bin
 
-size: $(LIBRARY)
-	@echo $@
-	$(SIZE) $(LIBRARY)
+hex:$(IMAGE).hex
 
-$(LIBRARY): $(OBJECTS)
+s19:$(IMAGE).s19
+
+size:$(IMAGE).elf
 	@echo $@
-	$(AR) $(ARFLAGS) $@ $^
+	$(SIZE) $(IMAGE).elf
+
+$(IMAGE).bin:$(IMAGE).elf
+	@echo $@
+	$(OBJCOPY) -O binary $< $@
+
+$(IMAGE).hex:$(IMAGE).elf
+	@echo $@
+	$(OBJCOPY) -O ihex $< $@
+
+$(IMAGE).s19:$(IMAGE).elf
+	@echo $@
+	$(OBJCOPY) -O srec $< $@
+
+$(IMAGE).lst:$(IMAGE).elf
+	@echo $@
+	$(OBJDUMP) -h -S -z $<  > $@
+
+$(IMAGE).elf:$(OBJECTS)
+	@echo $@
+	$(LD) $(CCFLAGS) $(LDFLAGS) $^ -o $@ $(LIBFLAGS)
 
 $(OBJ_PATH)/%.o:%.c
 	@echo $<
@@ -141,4 +207,8 @@ include $(wildcard $(OBJ_PATH)/*.d)
 clean:
 	rm -f $(OBJECTS)
 	rm -f $(patsubst %.o, %.d,$(OBJECTS))
-	rm -f $(LIBRARY) $(IMAGE).lst
+	rm -f $(IMAGE).bin $(IMAGE).elf $(IMAGE).hex $(IMAGE).s19 $(IMAGE).map $(IMAGE).lst
+
+clean-libs:
+	make clean -f build/scripts/$(MCU_SERIES)/hal.make
+	make clean -f build/scripts/$(MCU_SERIES)/bsp.make

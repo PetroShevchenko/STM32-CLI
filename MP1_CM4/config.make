@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (C) 2020 Petro Shevchenko <shevchenko.p.i@gmail.com>
+# Copyright (C) 2022 Petro Shevchenko <shevchenko.p.i@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@
 VERSION					:= Debug
 #VERSION				:= Release
 
-PROJECT_NAME			:= BSP_example
-BOARD_NAME 				:= STM32H747I-DISCO
+PROJECT_NAME			:= OpenAMP_TTY_echo
+BOARD_NAME 				:= STM32MP15xx_DISCO
 
-MCU_CORE 				:= CORE_CM7
-MCU_SERIES				:= STM32H7xx
-MCU_DEVICE 				:= STM32H747xx
+MCU_CORE 				:= CORE_CM4
+MCU_SERIES				:= STM32MP1xx
+MCU_DEVICE 				:= STM32MP157Cxx
 
-CUBE_PATH				:= $(HOME)/STM32CubeH7
+CUBE_PATH				:= $(HOME)/STM32CubeMP1
 
 TOOL_PATH				:= $(HOME)/gcc-arm-none-eabi-10.3-2021.07
 
-PROJECT_PATH			:= $(CUBE_PATH)/Projects/$(BOARD_NAME)/Examples/BSP
+PROJECT_PATH			:= $(CUBE_PATH)/Projects/STM32MP157C-DK2/Applications/OpenAMP/OpenAMP_TTY_echo

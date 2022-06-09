@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (C) 2020 Petro Shevchenko <shevchenko.p.i@gmail.com>
+# Copyright (C) 2022 Petro Shevchenko <shevchenko.p.i@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,18 +16,15 @@
 #
 ############################################################################
 
-VERSION					:= Debug
-#VERSION				:= Release
+BSP_PATH				:= $(CUBE_PATH)/Drivers/BSP
 
-PROJECT_NAME			:= BSP_example
-BOARD_NAME 				:= STM32H747I-DISCO
+INCLUDE_PATH			+= $(BSP_PATH)/$(BOARD_NAME)
+VPATH					+= $(BSP_PATH)/$(BOARD_NAME)
 
-MCU_CORE 				:= CORE_CM7
-MCU_SERIES				:= STM32H7xx
-MCU_DEVICE 				:= STM32H747xx
+INCLUDE_PATH 			+= $(BSP_PATH)
+VPATH 					+= $(BSP_PATH)
 
-CUBE_PATH				:= $(HOME)/STM32CubeH7
-
-TOOL_PATH				:= $(HOME)/gcc-arm-none-eabi-10.3-2021.07
-
-PROJECT_PATH			:= $(CUBE_PATH)/Projects/$(BOARD_NAME)/Examples/BSP
+SRC_BSP 				:= stm32mp15xx_disco.c
+#SRC_BSP 				+= stm32mp15xx_disco_bus.c
+#SRC_BSP 				+= stm32mp15xx_disco_errno.c
+#SRC_BSP 				+= stm32mp15xx_disco_stpmic1.c

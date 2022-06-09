@@ -1,6 +1,6 @@
 ############################################################################
 #
-# Copyright (C) 2020 Petro Shevchenko <shevchenko.p.i@gmail.com>
+# Copyright (C) 2022 Petro Shevchenko <shevchenko.p.i@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,37 +17,39 @@
 ############################################################################
 .PHONY:	all clean
 
-include CM7/config.make
+include MP1_CM4/config.make
 
-LIB_NAME				:= freertos
+LIB_NAME				:= hal
 
 CMSIS_PATH				:= $(CUBE_PATH)/Drivers/CMSIS
 
 INCLUDE_PATH			+= $(CMSIS_PATH)/Include
+INCLUDE_PATH			+= $(CMSIS_PATH)/Device/ST/$(MCU_SERIES)/Include
 
-RTOS_PATH				:= $(CUBE_PATH)/Middlewares/Third_Party/FreeRTOS/Source
+VPATH					+= $(CMSIS_PATH)/Device/ST/$(MCU_SERIES)/Source/Templates
+VPATH					+= $(CMSIS_PATH)/Device/ST/$(MCU_SERIES)/Source/Templates/gcc
 
-VPATH					+= $(RTOS_PATH)
-VPATH					+= $(RTOS_PATH)/portable/MemMang
-VPATH					+= $(RTOS_PATH)/portable/GCC/ARM_CM4F
-VPATH					+= $(RTOS_PATH)/CMSIS_RTOS_V2
+HAL_PATH 				:= $(CUBE_PATH)/Drivers/STM32MP1xx_HAL_Driver
 
-INCLUDE_PATH			+= $(VPATH)
-INCLUDE_PATH			+= $(RTOS_PATH)/include
-#INCLUDE_PATH			+= <Path to FreeRTOSConfig.h>
+VPATH 					+= $(HAL_PATH)/Src
+INCLUDE_PATH			+= $(HAL_PATH)/Inc
+INCLUDE_PATH			+= $(PROJECT_PATH)/Inc 
 
-SRC_RTOS				:= heap_4.c
-SRC_RTOS				+= port.c
-SRC_RTOS				+= cmsis_os2.c
-SRC_RTOS				+= croutine.c
-SRC_RTOS				+= event_groups.c
-SRC_RTOS				+= list.c
-SRC_RTOS				+= queue.c
-SRC_RTOS				+= stream_buffer.c
-SRC_RTOS				+= tasks.c
-SRC_RTOS				+= timers.c
+SRC_HAL					:= stm32mp1xx_hal.c
+SRC_HAL					+= stm32mp1xx_hal_cortex.c
+SRC_HAL					+= stm32mp1xx_hal_dma.c
+SRC_HAL					+= stm32mp1xx_hal_dma_ex.c
+SRC_HAL					+= stm32mp1xx_hal_gpio.c
+SRC_HAL					+= stm32mp1xx_hal_hsem.c
+SRC_HAL					+= stm32mp1xx_hal_i2c.c
+SRC_HAL					+= stm32mp1xx_hal_i2c_ex.c
+SRC_HAL					+= stm32mp1xx_hal_ipcc.c
+SRC_HAL					+= stm32mp1xx_hal_pwr.c
+SRC_HAL					+= stm32mp1xx_hal_pwr_ex.c
+SRC_HAL					+= stm32mp1xx_hal_rcc.c
+SRC_HAL					+= stm32mp1xx_hal_rcc_ex.c
 
-SRC 					:= $(SRC_RTOS)
+SRC 					:= $(SRC_HAL)
 
 OPTIMIZE_LEVEL			:= 2
 DEBUG_LEVEL				:= gdb
@@ -56,9 +58,14 @@ DEFINE					:= USE_HAL_DRIVER
 DEFINE					+= $(MCU_DEVICE)
 DEFINE					+= $(MCU_CORE)
 DEFINE 					+= $(BOARD_NAME)
+DEFINE 					+= METAL_MAX_DEVICE_REGIONS=2
+DEFINE 					+= __LOG_TRACE_IO_
+DEFINE 					+= NO_ATOMIC_64_SUPPORT
+DEFINE 					+= METAL_INTERNAL
+DEFINE 					+= VIRTIO_SLAVE_ONLY
 
-CCFLAGS 				:= -mcpu=cortex-m7
-CCFLAGS 				+= -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb
+CCFLAGS 				:= -mcpu=cortex-m4
+CCFLAGS 				+= -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb
 CCFLAGS 				+= -specs=nano.specs
 
 CROSS_PREFIX			:= arm-none-eabi-
@@ -104,7 +111,7 @@ CPPCFLAGS				+= $(CCFLAGS)
 CPPCFLAGS				+= -Weffc++ -Wextra -Wpedantic -Wshadow -Wundef -Wno-missing-field-initializers
 CPPCFLAGS				+= -std=c++11
 
-OBJ_PATH				:= build/CM7/obj
+OBJ_PATH				:= build/MP1_CM4/obj
 
 OBJECTS					:= $(addprefix $(OBJ_PATH)/,$(patsubst %.c, %.o,$(filter %.c,$(SRC))))
 OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.cpp, %.o,$(filter %.cpp,$(SRC))))
@@ -113,7 +120,7 @@ OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.s, %.o,$(filter %.s,$(SRC))
 OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.S, %.o,$(filter %.S,$(SRC))))
 
 IMAGE 					:= $(OBJ_PATH)/$(LIB_NAME)
-LIBRARY 				:= build/CM7/lib$(LIB_NAME).a
+LIBRARY 				:= build/MP1_CM4/lib$(LIB_NAME).a
 
 all: lib
 

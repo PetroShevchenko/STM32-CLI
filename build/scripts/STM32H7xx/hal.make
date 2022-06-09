@@ -219,7 +219,7 @@ OBJECTS					+= $(addprefix $(OBJ_PATH)/,$(patsubst %.S, %.o,$(filter %.S,$(SRC))
 IMAGE 					:= $(OBJ_PATH)/$(LIB_NAME)
 LIBRARY 				:= build/CM7/lib$(LIB_NAME).a
 
-all: lib size
+all: lib
 
 lib: $(LIBRARY)
 	$(RANLIB) $(LIBRARY)
